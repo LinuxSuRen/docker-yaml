@@ -21,12 +21,12 @@ func NewAppCommand(commonOpts *common.Options) (cmd *cobra.Command) {
 			}
 
 			var apps []pkg.Application
-			if apps,err = pkg.GetApplications("docker.yaml"); err == nil {
+			if apps, err = pkg.GetApplications("docker.yaml"); err == nil {
 				for _, app := range apps {
 					df := pkg.DockerDeploy{
-						App: app,
+						App:     app,
 						Context: context.Background(),
-						Client: cli,
+						Client:  cli,
 					}
 
 					if err = df.DeployImage(); err != nil {

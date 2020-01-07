@@ -1,2 +1,0 @@
-- name: jenkins-wechat
-  image: jenkinszh/jenkins-zh:latest
