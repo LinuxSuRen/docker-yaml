@@ -1,36 +1,7 @@
 package main
 
-import (
-	"context"
-	"fmt"
-	"github.com/docker/docker/api/types"
-	"github.com/docker/docker/client"
-	"time"
-)
+import "github.com/linuxsuren/docker-yaml/cmd"
 
 func main()  {
-	cli, err := client.NewEnvClient()
-	if err != nil {
-		panic(err)
-	}
-
-	containers, err := cli.ContainerList(context.Background(), types.ContainerListOptions{})
-	if err != nil {
-		panic(err)
-	}
-
-	for _, container := range containers {
-		fmt.Printf("%s %s\n", container.ID[:10], container.Image)
-
-		timeout := time.Second
-		err = cli.ContainerStop(context.Background(), container.ID, &timeout)
-		if err != nil {
-			panic(err)
-		}
-
-		err = cli.ContainerStart(context.Background(), container.ID, types.ContainerStartOptions{})
-		if err != nil {
-			panic(err)
-		}
-	}
+	cmd.Execute()
 }

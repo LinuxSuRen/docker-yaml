@@ -3,7 +3,7 @@ package pkg
 type Application struct {
 	Name string
 	Image string
-	Restart string
+	Restart bool
 	Exposes []Expose
 	Volumes []Volume
 }
