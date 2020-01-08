@@ -20,6 +20,16 @@ type DockerDeploy struct {
 }
 
 func (d *DockerDeploy) DeployImage() (err error) {
+	var needUpdate bool
+	if needUpdate, err = d.NeedUpdate(); err != nil {
+		return
+	}
+
+	if !needUpdate {
+		fmt.Println("do not need to update", d.App.Name)
+		return
+	}
+
 	err = d.StopContainer()
 	if err == nil {
 		err = d.RemoveContainer()
@@ -30,7 +40,15 @@ func (d *DockerDeploy) DeployImage() (err error) {
 	return
 }
 
-func (d *DockerDeploy) FindContainer() (containerID string, err error) {
+func (d *DockerDeploy) FindContainerID() (containerID string, err error) {
+	var result *types.Container
+	if result, err = d.FindContainer(); err == nil && result != nil {
+		containerID = result.ID
+	}
+	return
+}
+
+func (d *DockerDeploy) FindContainer() (result *types.Container, err error) {
 	containers, err := d.Client.ContainerList(d.Context, types.ContainerListOptions{
 		All: true,
 	})
@@ -39,8 +57,8 @@ func (d *DockerDeploy) FindContainer() (containerID string, err error) {
 	}
 
 	for _, item := range containers {
-		if item.Names[0] == "/"+ d.App.Name {
-			containerID = item.ID
+		if item.Names[0] == "/"+d.App.Name {
+			result = &item
 			break
 		}
 	}
@@ -51,7 +69,7 @@ func (d *DockerDeploy) StopContainer() (err error) {
 	timeout := time.Minute
 
 	var containerID string
-	if containerID, err = d.FindContainer(); err == nil && containerID != "" {
+	if containerID, err = d.FindContainerID(); err == nil && containerID != "" {
 		err = d.Client.ContainerStop(d.Context, containerID, &timeout)
 	}
 	return
@@ -59,9 +77,17 @@ func (d *DockerDeploy) StopContainer() (err error) {
 
 func (d *DockerDeploy) RemoveContainer() (err error) {
 	var containerID string
-	if containerID, err = d.FindContainer(); err == nil && containerID != "" {
+	if containerID, err = d.FindContainerID(); err == nil && containerID != "" {
 		fmt.Println("prepare to remove container ", containerID)
 		err = d.Client.ContainerRemove(d.Context, containerID, types.ContainerRemoveOptions{})
+	}
+	return
+}
+
+func (d *DockerDeploy) NeedUpdate() (needUpdate bool, err error) {
+	var result *types.Container
+	if result, err = d.FindContainer(); err == nil && result != nil {
+		needUpdate = d.App.Image != result.Image
 	}
 	return
 }
@@ -87,7 +113,7 @@ func (d *DockerDeploy) RunImage() (err error) {
 
 func (d *DockerDeploy) getConfig() *container.Config {
 	config := &container.Config{
-		Image: d.App.Image,
+		Image:   d.App.Image,
 		Volumes: map[string]struct{}{},
 	}
 	return config
@@ -107,7 +133,7 @@ func (d *DockerDeploy) getHostConfig() *container.HostConfig {
 	mounts := make([]mount.Mount, 0)
 	for _, volume := range d.App.Volumes {
 		mounts = append(mounts, mount.Mount{
-			Type: mount.TypeBind,
+			Type:   mount.TypeBind,
 			Source: volume.Host,
 			Target: volume.Container,
 		})
@@ -115,6 +141,6 @@ func (d *DockerDeploy) getHostConfig() *container.HostConfig {
 
 	return &container.HostConfig{
 		PortBindings: portBindings,
-		Mounts: mounts,
+		Mounts:       mounts,
 	}
 }
