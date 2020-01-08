@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
-	"github.com/docker/docker/client"
 	"github.com/docker/docker/api/types/mount"
+	"github.com/docker/docker/client"
 	"github.com/docker/go-connections/nat"
 	"io"
 	"os"
@@ -31,13 +31,15 @@ func (d *DockerDeploy) DeployImage() (err error) {
 }
 
 func (d *DockerDeploy) FindContainer() (containerID string, err error) {
-	containers, err := d.Client.ContainerList(d.Context, types.ContainerListOptions{})
+	containers, err := d.Client.ContainerList(d.Context, types.ContainerListOptions{
+		All: true,
+	})
 	if err != nil {
 		return
 	}
 
 	for _, item := range containers {
-		if item.Names[0] == d.App.Name {
+		if item.Names[0] == "/"+ d.App.Name {
 			containerID = item.ID
 			break
 		}
@@ -46,7 +48,7 @@ func (d *DockerDeploy) FindContainer() (containerID string, err error) {
 }
 
 func (d *DockerDeploy) StopContainer() (err error) {
-	timeout := time.Second
+	timeout := time.Minute
 
 	var containerID string
 	if containerID, err = d.FindContainer(); err == nil && containerID != "" {
@@ -58,6 +60,7 @@ func (d *DockerDeploy) StopContainer() (err error) {
 func (d *DockerDeploy) RemoveContainer() (err error) {
 	var containerID string
 	if containerID, err = d.FindContainer(); err == nil && containerID != "" {
+		fmt.Println("prepare to remove container ", containerID)
 		err = d.Client.ContainerRemove(d.Context, containerID, types.ContainerRemoveOptions{})
 	}
 	return
