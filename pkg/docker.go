@@ -88,6 +88,8 @@ func (d *DockerDeploy) NeedUpdate() (needUpdate bool, err error) {
 	var result *types.Container
 	if result, err = d.FindContainer(); err == nil && result != nil {
 		needUpdate = d.App.Image != result.Image
+	} else {
+		needUpdate = true
 	}
 	return
 }
