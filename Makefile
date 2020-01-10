@@ -22,3 +22,6 @@ win:
 	CGO_ENABLED=$(CGO_ENABLED) GOOS=windows GOARCH=386 $(GO) $(BUILD_TARGET) $(BUILDFLAGS) -o bin/windows/$(NAME).exe $(MAIN_SRC_FILE)
 
 build-all: darwin linux win
+
+copy-darwin-bin: darwin
+	cp bin/darwin/$(NAME) /usr/local/bin/$(NAME)
